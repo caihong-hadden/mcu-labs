@@ -1,0 +1,45 @@
+#include "adc.h"
+#include "FreeRTOS.h"
+#include "main.h"
+
+#include <math.h>
+
+#include "task.h"
+#include "stdio_ext.h"
+#include "string.h"
+#include "hrtim.h"
+#include "lvgl.h"
+#include "lv_port_disp.h"
+#include "spi.h"
+
+extern TaskHandle_t adc_task_handle;
+
+void LED_task0(void *arg)
+{
+    LOGI("LED", "Task Running. Stack: %p", xTaskGetCurrentTaskHandle());
+    while(1)
+    {
+        vTaskDelay(pdMS_TO_TICKS(500));
+        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_0);
+    }
+}
+
+void app_main(void)
+{
+    log_init(LOG_INFO);
+    LOGI("MAIN", "Hello world!");
+
+    // printf("helloworld\n");
+    xTaskCreate(LED_task0, "LED", 256, NULL, 10, NULL);
+    ui_init();
+    pid_ctrl_init();
+    ADC_init();
+
+    HAL_HRTIM_WaveformCountStart(&hhrtim1,HRTIM_TIMERID_TIMER_A);
+    HAL_HRTIM_WaveformCountStart(&hhrtim1,HRTIM_TIMERID_TIMER_B);
+    HAL_HRTIM_WaveformOutputStart(&hhrtim1,HRTIM_OUTPUT_TA1 | HRTIM_OUTPUT_TA2);
+    HAL_HRTIM_WaveformOutputStart(&hhrtim1,HRTIM_OUTPUT_TB1 | HRTIM_OUTPUT_TB2);
+
+    HAL_HRTIM_WaveformCountStart(&hhrtim1, HRTIM_TIMERID_MASTER);
+    HAL_HRTIM_SimpleBaseStart_IT(&hhrtim1, HRTIM_TIMERINDEX_MASTER);
+}
